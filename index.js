@@ -13,7 +13,8 @@ const workerRoutes = require('./routes/worker');
 const clientRoutes = require('./routes/client');
 const { requireWorkerAuth, requireClientAuth, requireAdminAuth } = require('./middleware/auth');
 
-dotenv.config();
+dotenv.config({path : 'config.env'})
+const port = process.env.PORT || 8080
 const app = express();
 
 app.use(express.json());
@@ -43,16 +44,24 @@ app.set('view engine', 'ejs');
 
 // database connection
 mongoose.set('strictQuery', true);
-const port = process.env.PORT || 3000;
-const dbURI = process.env.MONGODB_CONNECTION_URI || MONGODB_CONNECTION_URI;
-mongoose
-	.connect(dbURI, { useNewUrlParser: true, useUnifiedTopology: true })
-	.then((result) => app.listen(port, () => console.log(`Listening on port ${port}`)))
-	.catch((err) => console.log(err));
+// const port = process.env.PORT || 3000;
+const connectDB = async()=>{
+    try{
+        // MongoDB connection String
+        const conne = await mongoose.connect(process.env.MONGO_URI);
+        console.log(`MongoDB Connected : ${conne.connection.host}`);
+    }
+    catch(err){
+        console.log(err);
+        process.exit(1);
+    }
+}
+
 
 app.get('/', (req, res) => {
-	res.send('Hello Word');
+	res.render('homeParkEace', { errMsg: '' });
 });
+
 
 // Public Route for Admin
 app.post('/api/admin/login', adminController.login_post);
@@ -90,3 +99,9 @@ app.use('/api/client/', requireClientAuth, clientRoutes);
 // Admin Protected Routes
 // app.use("/api/admin/", requireAdminAuth, adminRoutes)
 app.use('/api/admin/', requireAdminAuth, adminRoutes);
+
+
+// 
+app.listen(port,()=>{
+    console.log(`Server is running on http://localhost:${port}`);
+})
